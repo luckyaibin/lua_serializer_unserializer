@@ -1,0 +1,179 @@
+function int8ToBits(num)
+	num=math.floor(num);
+	local bits = {};
+	for i=7,0,-1 do 
+		local bit = 0;
+		if num % 2 > 0 then
+			bit = 1;
+		end
+		bits[i] = bit;
+		num = math.floor(num / 2);
+	end
+	return bits;
+end
+
+function int32ToBits(num)
+	num=math.floor(num);
+	local bits = {};
+	for i=31,0,-1 do 
+		local bit = 0;
+		if num % 2 > 0 then
+			bit = 1;
+		end
+		bits[i] = bit;
+		num = math.floor(num / 2);
+	end
+	return bits;
+end
+
+function bitsToInt32(bits)
+	local i=0;
+	local j=#bits-1;
+	local intValue = 0;
+	for idx = j,i,-1 do
+		local bit = bits[idx];
+		intValue = intValue + bit;
+		if idx < i then
+			intValue = intValue * 2;
+		end
+	end
+	return intValue;
+end
+
+function int64ToBits(num)
+	--assert(nil,'int64 is too big')
+	num=math.floor(num);
+	local bits = {};
+	for i=63,0,-1 do 
+		local bit = 0;
+		if num % 2 > 0 then
+			bit = 1;
+		end
+		bits[i] = bit;
+		num = math.floor(num / 2);
+	end
+	return bits;
+end
+
+function bitsToInt64(bits)
+	assert(nil,'不能这样用');
+end
+
+--bit字符串对应的int,longlong值转成string里去
+function bitsToString(bits)	
+	if type(bits) == 'table' then
+		assert(nil,'还没实现')		
+	elseif type(bits) == 'string' then
+		bits = string.gsub(bits,' ','');--去掉空格
+		--十六进制的字符串直接转成二进制字符串算了。。难得麻烦
+		if string.sub(bits,1,1) == '0' and (string.sub(bits,2,2) == 'x' or string.sub(bits,2,2) == 'X') then
+			local bitOfHex = '';
+			for i=3,#bits do 
+				local h = string.sub(bits,i,i);
+				local HexBitMap = {
+						['0'] = '0000';['1'] = '0001';['2'] = '0010';['3'] = '0011';['4'] = '0100';['5'] = '0101';['6'] = '0110';['7'] = '0111';['8'] = '1000';	['9'] = '1001';
+						['a'] = '1010';['b'] = '1011';['c'] = '1100';['d'] = '1101';['e'] = '1110';['f'] = '1111';
+						['A'] = '1010';['B'] = '1011';['C'] = '1100';['D'] = '1101';['E'] = '1110';['F'] = '1111';}
+				local bit_str = HexBitMap[h];
+				assert(bit_str,'invalid char in hex string。');
+				bitOfHex = bitOfHex .. bit_str;
+			end
+			--已转成了0/1字符串
+			bits = bitOfHex;
+		end
+		
+		local len = #bits;
+		
+		local left = len % 8;
+		if left ~= 0 then--凑足8的倍数
+			local pre_zeros = string.rep('0',8-left);
+			bits = pre_zeros .. bits;
+		end
+		
+		local len = #bits;
+		local bytenum = len / 8;
+		local str = '';
+		for i=1,bytenum do 	
+			local intValue = 0;
+			for j = (i-1) * 8 + 1, i*8 do --取出8个0/1字符串的每一个
+				local bit = string.sub(bits,j,j);
+				if bit == '0' then
+					intValue = intValue + 0;
+				elseif bit == '1' then
+					intValue = intValue + 1;
+				else
+					assert(ni,'无效的字符'..bit)
+				end
+				if j < i*8 then
+					intValue = intValue * 2;
+				end
+			end
+			local c = string.char(intValue);
+			str = str .. c;
+		end
+		return str;
+	end
+end
+
+--序列化在字符串里的二进制值，转成二进制字符串
+function stringToBits(bitsInString)	
+	if type(bitsInString) == 'string' then
+		local concat = function(lst)
+			local str='';
+			for i=0,#lst do 
+				str = str .. lst[i];
+			end
+			return str;
+		end
+		local bits = '';
+		for i=1,#bitsInString do 
+			local c = string.sub(bitsInString,i,i);--每次取出一个char来处理
+			local b = string.byte(c);
+			local bits_arr = int8ToBits(b);
+			if bits ~= '' then
+				bits = bits .. ' ';
+			end
+			bits_arr = concat(bits_arr)
+			if #bits_arr < 8 then
+				bits_arr = string.rep('0', 8 - #bits_arr) .. bits_arr;
+			end
+			bits = bits .. bits_arr;
+		end
+		return bits;
+	end
+end
+
+
+function print32Bits(num)
+	local str = '';
+    local bits = int32ToBits(num)
+	for i=0,31 do 
+		str = str .. bits[i];
+		if i % 8 == 7 then 
+			str = str .. ' ';
+		end
+	end
+	print(str);
+end
+
+function print64Bits(num)
+	local str = '';
+    local bits = int64ToBits(num)
+	for i=0,63 do 
+		str = str .. bits[i];
+		if i % 8 == 7 then 
+			str = str .. ' ';
+		end
+	end
+	print(str);
+end
+
+
+local c = bitsToString("0x4123c290");
+print(c)
+
+local bits = stringToBits(c);
+print(bits)
+
+
+print64Bits(8620171161763840);
