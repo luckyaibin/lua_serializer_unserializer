@@ -47,6 +47,10 @@ __ReverseB2Type[44] =  32;
 -- 1111 1111 = 255 ->  -1
  
 function bio2IntLua(bio)
+	--g_bio_num = g_bio_num + 1;
+	if not bio then
+		return nil;
+	end
 	local tag = string.byte(bio,1,1);
 	local int = __ReverseB2Type[tag];
 	if int then
@@ -54,14 +58,7 @@ function bio2IntLua(bio)
 	elseif tag == 9 then --INT_8B
 		local int0 = string.byte(bio,2,2);
 		if int0 >= 128 then--字节是负数,里面存放的1字节是负数的补码,比如读出来是128， 128=1000 0000，对应signed char 是 -127，而127=0111 1111
-			local int0_abs = int0;
-			int0_abs = 255 - int0;
-			int0_abs = int0_abs + 1;
-			if int0_abs == 256 then --取反+1
-				int0_abs = 0;
-			else
-			end	
-			int = -int0_abs;
+			int = int0 - 256;
 		else
 			int = int0;
 		end
@@ -69,26 +66,7 @@ function bio2IntLua(bio)
 		local int0 = string.byte(bio,2,2)	
 		local int1 = string.byte(bio,3,3)
 		if int0 >= 128 then--字节是负数,里面存放的2字节是负数的补码
-			local int0_abs = int0;
-			local int1_abs = int1;	
-			local carry = 1;
-		  	int1_abs = 255 - int1;
-			int1_abs = int1_abs + carry;
-			if int1_abs == 256 then --取反+1
-				int1_abs = 0;
-				carry = 1;
-			else 
-				carry = 0;
-			end
-			int0_abs = 255 - int0;
-			int0_abs = int0_abs + carry;
-			if int0_abs == 256 then --取反+1
-				int0_abs = 0;
-				carry = 1;
-			else
-				carry = 0;
-			end
-			int = -(int0_abs*256 + int1_abs);
+			int = (int0*256 + int1) - 65536;
 		else
 			int =(int0*256 + int1);
 		end
@@ -99,50 +77,12 @@ function bio2IntLua(bio)
 		local int3 = string.byte(bio,5,5)		
 		--字节是负数,里面存放的4字节是负数的补码
 		if int0 >= 128 then
-			local int0_abs = int0;
-			local int1_abs = int1;
-			local int2_abs = int2;
-			local int3_abs = int3;	
-			--每一个字节取反，然后加1，得到的就是这个负数的绝对值
-			local carry = 1;--取反加一就是负数绝对值
-		  	int3_abs = 255 - int3;
-			int3_abs = int3_abs + carry;
-			if int3_abs == 256 then --每bit求反
-				int3_abs = 0;
-				carry = 1;
-			else 
-				carry = 0;
-			end
-			int2_abs = 255 - int2;
-			int2_abs = int2_abs + carry;
-			if int2_abs == 256 then --每bit求反
-				int2_abs = 0;
-				carry = 1;
-			else
-				carry = 0;
-			end	
-			int1_abs = 255 - int1;
-			int1_abs = int1_abs + carry;
-			if int1_abs == 256 then --每bit求反
-				int1_abs = 0;
-				carry = 1;
-			else
-				carry = 0;
-			end
-			int0_abs = 255 - int0;
-			int0_abs = int0_abs + carry;
-			if int0_abs == 256 then --每bit求反
-				int0_abs = 0;
-				carry = 1;
-			else
-				carry = 0;
-			end
-			int = -(int0_abs * 16777216 + int1_abs*65536 + int2_abs*256 + int3_abs);
+			int = (int0 * 16777216 + int1*65536 + int2*256 + int3) - 4294967296;
 		else
 			int =(int0 * 16777216 + int1*65536 + int2*256 + int3);
 		end	
 	else
-		error('无效的bio，不能转为int');
+		printe('无效的bio，不能转为int');
 	end
 	return int;
 end
